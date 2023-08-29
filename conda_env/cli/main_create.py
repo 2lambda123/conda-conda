@@ -41,6 +41,14 @@ the name specified in the environment.yml file.
 Unless you are in the directory containing the environment definition
 file, use -f to specify the file path of the environment definition
 file you want to use.
+
+You can create conda environments from environment.yml files stored
+on the web using FSSpec URIs(1) of the format protocol://path/to/file.
+See the example below for how to specify a file stored on github.
+
+(1) See these pages for built-in and third-party protocols
+https://filesystem-spec.readthedocs.io/en/latest/api.html#built-in-implementations
+https://filesystem-spec.readthedocs.io/en/latest/api.html#other-known-implementations
 """
 
 example = """
@@ -48,6 +56,7 @@ examples:
     conda env create
     conda env create -n envname
     conda env create folder/envname
+    conda env create github://<org>:<repo>@<branch-or-sha>/path/to/environment.yml
     conda env create -f /path/to/environment.yml
     conda env create -f /path/to/requirements.txt -n envname
     conda env create -f /path/to/requirements.txt -p /home/user/envname
@@ -78,7 +87,7 @@ def configure_parser(sub_parsers):
 
     p.add_argument(
         "remote_definition",
-        help="Remote environment definition / IPython notebook",
+        help="Remote environment definition in the form of protocol://path/to/file",
         action="store",
         default=None,
         nargs="?",
