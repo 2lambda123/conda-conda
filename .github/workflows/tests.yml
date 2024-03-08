@@ -240,6 +240,10 @@ jobs:
       - name: Conda List
         run: conda list --show-channel-urls
 
+      - name: Install Shells
+        # for conda activate tests
+        run: sudo apt update && sudo apt install ash csh fish tcsh xonsh zsh
+
       - name: Run Tests
         run: >
           pytest
@@ -545,6 +549,10 @@ jobs:
 
       - name: Conda List
         run: conda list --show-channel-urls
+
+      - name: Install Shells
+        # for conda activate tests
+        run: brew update && brew install fish xonsh
 
       - name: Run Tests
         run: >
