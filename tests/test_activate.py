@@ -43,7 +43,7 @@ from conda.base.constants import (
 from conda.base.context import context, reset_context
 from conda.cli.main import main_sourced
 from conda.common.compat import on_win
-from conda.common.io import captured, env_var, env_vars
+from conda.common.io import captured, env_vars
 from conda.exceptions import EnvironmentLocationNotFound, EnvironmentNameNotFound
 from conda.gateways.disk.create import mkdir_p
 from conda.gateways.disk.delete import rm_rf
@@ -53,7 +53,7 @@ from conda.testing.integration import SPACER_CHARACTER
 from conda.utils import quote_for_shell
 
 if TYPE_CHECKING:
-    from typing import Callable, Iterable, Literal
+    from typing import Callable, Iterable
 
     from pytest import MonkeyPatch
 
@@ -87,7 +87,7 @@ HDF5_VERSION = "1.12.1"
 
 
 @lru_cache(maxsize=None)
-def bash_unsupported() -> str | Literal[False]:
+def bash_unsupported() -> str | None:
     if not (bash := which("bash")):
         return "bash: was not found on PATH"
     elif on_win:
@@ -102,20 +102,37 @@ def bash_unsupported() -> str | Literal[False]:
                 output = check_output(f"{bash} --version")
                 if b"msys" not in output and b"cygwin" not in output:
                     return f"bash: Only MSYS2 and Cygwin bash are supported on Windows, found:\n{output!r}\n"
-    return False
+    return None
 
 
-skipif_bash_unsupported = pytest.mark.skipif(
+skip_unsupported_bash = pytest.mark.skipif(
     bash_unsupported(),
-    reason=bash_unsupported(),
+    reason=bash_unsupported() or "bash: supported!",
 )
-skipif_posix_path_unsupported = pytest.mark.skipif(
+skip_unsupported_posix_path = pytest.mark.skipif(
     on_win,
     reason=(
         "You are using Windows. These tests involve setting PATH to POSIX values\n"
         "but our Python is a Windows program and Windows doesn't understand POSIX values."
     ),
 )
+
+
+# a unique prompt (makes it easy to know that our values are showing up correctly)
+DEFAULT_PROMPT = " >>(testing)>> "
+
+# a unique context.env_prompt (makes it easy to know that our values are showing up correctly)
+DEFAULT_ENV_PROMPT = "-- ==({default_env})== --"
+
+
+def get_prompt_modifier(default_env: str | os.PathLike | Path) -> str:
+    return DEFAULT_ENV_PROMPT.format(default_env=default_env)
+
+
+def get_prompt(default_env: str | os.PathLike | Path | None = None) -> str:
+    if not default_env:
+        return DEFAULT_PROMPT
+    return get_prompt_modifier(default_env) + DEFAULT_PROMPT
 
 
 @pytest.fixture(autouse=True)
@@ -130,10 +147,11 @@ def reset_environ(monkeypatch: MonkeyPatch) -> None:
     ):
         monkeypatch.delenv(name, raising=False)
 
-    monkeypatch.setenv("PS1", "> ")
-    monkeypatch.setenv("prompt", "> ")
+    monkeypatch.setenv("PS1", DEFAULT_PROMPT)
+    monkeypatch.setenv("prompt", DEFAULT_PROMPT)
 
     monkeypatch.setenv("CONDA_CHANGEPS1", "true")
+    monkeypatch.setenv("CONDA_ENV_PROMPT", DEFAULT_ENV_PROMPT)
     reset_context()
     assert context.changeps1
 
@@ -238,6 +256,21 @@ def env_deactivate(tmp_env: TmpEnvFixture) -> tuple[str, str, str]:
         return str(prefix), str(deactivate_sh), str(deactivate_bat)
 
 
+def get_scripts_export_unset_vars(
+    activator: _Activator,
+    **kwargs: str,
+) -> tuple[str, str]:
+    export_vars, unset_vars = activator.get_export_unset_vars(**kwargs)
+    return (
+        activator.command_join.join(
+            activator.export_var_tmpl % (k, v) for k, v in (export_vars or {}).items()
+        ),
+        activator.command_join.join(
+            activator.unset_var_tmpl % (k) for k in (unset_vars or [])
+        ),
+    )
+
+
 def test_activate_environment_not_found(tmp_path: Path):
     activator = PosixActivator()
 
@@ -252,17 +285,15 @@ def test_activate_environment_not_found(tmp_path: Path):
 
 
 def test_PS1(tmp_path: Path):
+    conda_prompt_modifier = get_prompt_modifier(ROOT_ENV_NAME)
     activator = PosixActivator()
-    assert activator._prompt_modifier(tmp_path, ROOT_ENV_NAME) == f"({ROOT_ENV_NAME}) "
+    assert activator._prompt_modifier(tmp_path, ROOT_ENV_NAME) == conda_prompt_modifier
 
     instructions = activator.build_activate("base")
-    assert instructions["export_vars"]["CONDA_PROMPT_MODIFIER"] == f"({ROOT_ENV_NAME}) "
+    assert instructions["export_vars"]["CONDA_PROMPT_MODIFIER"] == conda_prompt_modifier
 
 
-def test_PS1_no_changeps1(
-    monkeypatch: MonkeyPatch,
-    tmp_path: Path,
-):
+def test_PS1_no_changeps1(monkeypatch: MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("CONDA_CHANGEPS1", "false")
     reset_context()
     assert not context.changeps1
@@ -366,7 +397,7 @@ def test_replace_prefix_in_path_1():
 
 
 @pytest.mark.skipif(not on_win, reason="windows-specific test")
-def test_replace_prefix_in_path_2():
+def test_replace_prefix_in_path_2(monkeypatch: MonkeyPatch):
     path1 = join("c:\\", "temp", "6663 31e0")
     path2 = join("c:\\", "temp", "6663 31e0", "envs", "charizard")
     one_more = join("d:\\", "one", "more")
@@ -375,16 +406,16 @@ def test_replace_prefix_in_path_2():
     activator = CmdExeActivator()
     old_path = activator.pathsep_join(activator._add_prefix_to_path(path1))
     old_path = one_more + ";" + old_path
-    with env_var("PATH", old_path):
-        activator = PosixActivator()
-        path_elements = activator._replace_prefix_in_path(path1, path2)
-    old_path = native_path_to_unix(old_path.split(";"))
+
+    monkeypatch.setenv("PATH", old_path)
+    activator = PosixActivator()
+    path_elements = activator._replace_prefix_in_path(path1, path2)
 
     assert path_elements[0] == native_path_to_unix(one_more)
     assert path_elements[1] == native_path_to_unix(
         next(activator._get_path_dirs(path2))
     )
-    assert len(path_elements) == len(old_path)
+    assert len(path_elements) == len(old_path.split(";"))
 
 
 def test_default_env(tmp_path: Path):
@@ -396,21 +427,6 @@ def test_default_env(tmp_path: Path):
     prefix = tmp_path / "envs" / "named-env"
     prefix.mkdir(parents=True)
     assert prefix.name == activator._default_env(str(prefix))
-
-
-def get_scripts_export_unset_vars(
-    activator: _Activator,
-    **kwargs: str,
-) -> tuple[str, str]:
-    export_vars, unset_vars = activator.get_export_unset_vars(**kwargs)
-    return (
-        activator.command_join(
-            activator.export_var_tmpl % (k, v) for k, v in (export_vars or {}).items()
-        ),
-        activator.command_join(
-            activator.unset_var_tmpl % (k) for k in (unset_vars or [])
-        ),
-    )
 
 
 def test_build_activate_dont_activate_unset_var(env_activate: tuple[str, str, str]):
@@ -523,7 +539,7 @@ def test_build_activate_shlvl_0(env_activate: tuple[str, str, str]):
     assert builder["activate_scripts"] == [activator.path_conversion(activate_sh)]
 
 
-@skipif_posix_path_unsupported
+@skip_unsupported_posix_path
 def test_build_activate_shlvl_1(
     env_activate: tuple[str, str, str],
     monkeypatch: MonkeyPatch,
@@ -615,7 +631,7 @@ def test_build_activate_shlvl_1(
     assert builder["activate_scripts"] == []
 
 
-@skipif_posix_path_unsupported
+@skip_unsupported_posix_path
 def test_build_stack_shlvl_1(
     env_activate: tuple[str, str, str],
     monkeypatch: MonkeyPatch,
@@ -734,7 +750,7 @@ def test_activate_same_environment(
     assert builder["activate_scripts"] == [activator.path_conversion(activate_sh)]
 
 
-@skipif_posix_path_unsupported
+@skip_unsupported_posix_path
 def test_build_deactivate_shlvl_2_from_stack(
     env_activate: tuple[str, str, str],
     env_deactivate: tuple[str, str, str],
@@ -801,7 +817,7 @@ def test_build_deactivate_shlvl_2_from_stack(
     assert builder["activate_scripts"] == [activator.path_conversion(activate_sh)]
 
 
-@skipif_posix_path_unsupported
+@skip_unsupported_posix_path
 def test_build_deactivate_shlvl_2_from_activate(
     env_activate: tuple[str, str, str],
     env_deactivate: tuple[str, str, str],
@@ -923,7 +939,7 @@ def test_get_env_vars_empty_file(tmp_env: TmpEnvFixture):
         assert env_vars == {}
 
 
-@skipif_posix_path_unsupported
+@skip_unsupported_posix_path
 def test_build_activate_restore_unset_env_vars(
     env_activate: tuple[str, str, str],
     monkeypatch: MonkeyPatch,
@@ -2482,7 +2498,7 @@ def basic_csh(shell, prefix, prefix2, prefix3):
             "bash",
             basic_posix,
             marks=[
-                skipif_bash_unsupported,
+                skip_unsupported_bash,
                 pytest.mark.skipif(
                     on_win, reason="Temporary skip, larger refactor necessary"
                 ),
@@ -2729,7 +2745,7 @@ def test_cmd_exe_basic_integration(shell_wrapper_integration: tuple[str, str, st
         shell.assert_env_var("CONDA_SHLVL", "0")
 
 
-@skipif_bash_unsupported
+@skip_unsupported_bash
 @pytest.mark.skipif(on_win, reason="Temporary skip, larger refactor necessary")
 @pytest.mark.integration
 def test_bash_activate_error(shell_wrapper_integration: tuple[str, str, str]):
@@ -2767,7 +2783,7 @@ def test_cmd_exe_activate_error(shell_wrapper_integration: tuple[str, str, str])
         shell.expect("usage: conda activate")
 
 
-@skipif_bash_unsupported
+@skip_unsupported_bash
 @pytest.mark.integration
 def test_legacy_activate_deactivate_bash(
     shell_wrapper_integration: tuple[str, str, str],
@@ -2857,7 +2873,7 @@ def test_legacy_activate_deactivate_cmd_exe(
     [
         pytest.param(
             "bash",
-            marks=skipif_bash_unsupported,
+            marks=skip_unsupported_bash,
         ),
         pytest.param(
             "cmd.exe",
