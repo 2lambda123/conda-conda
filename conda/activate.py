@@ -8,6 +8,7 @@ parser, an abstract shell class, and special path handling for Windows.
 
 See conda.cli.main.main_sourced for the entry point into this module.
 """
+
 from __future__ import annotations
 
 import abc
@@ -113,18 +114,15 @@ class _Activator(metaclass=abc.ABCMeta):
 
     @overload
     @staticmethod
-    def path_conversion(paths: None) -> None:
-        ...
+    def path_conversion(paths: None) -> None: ...
 
     @overload
     @staticmethod
-    def path_conversion(paths: str) -> str:
-        ...
+    def path_conversion(paths: str) -> str: ...
 
     @overload
     @staticmethod
-    def path_conversion(paths: Iterable[str]) -> list[str]:
-        ...
+    def path_conversion(paths: Iterable[str]) -> list[str]: ...
 
     @staticmethod
     def path_conversion(
@@ -976,18 +974,15 @@ def backslash_to_forwardslash(
 class _NativeToUnixActivator(_Activator):
     @overload
     @staticmethod
-    def path_conversion(paths: None) -> None:
-        ...
+    def path_conversion(paths: None) -> None: ...
 
     @overload
     @staticmethod
-    def path_conversion(paths: str) -> str:
-        ...
+    def path_conversion(paths: str) -> str: ...
 
     @overload
     @staticmethod
-    def path_conversion(paths: Iterable[str]) -> list[str]:
-        ...
+    def path_conversion(paths: Iterable[str]) -> list[str]: ...
 
     @staticmethod
     def path_conversion(
@@ -1001,18 +996,15 @@ class _BackslashToForwardslashActivator(_Activator):
 
         @overload
         @staticmethod
-        def path_conversion(paths: None) -> None:
-            ...
+        def path_conversion(paths: None) -> None: ...
 
         @overload
         @staticmethod
-        def path_conversion(paths: str) -> str:
-            ...
+        def path_conversion(paths: str) -> str: ...
 
         @overload
         @staticmethod
-        def path_conversion(paths: Iterable[str]) -> list[str]:
-            ...
+        def path_conversion(paths: Iterable[str]) -> list[str]: ...
 
         @staticmethod
         def path_conversion(
