@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
     from typing import Callable
 
+    from requests.adapters import BaseAdapter
+
     from ..common.configuration import Parameter
     from ..core.solve import Solver
     from ..models.match_spec import MatchSpec
@@ -143,11 +145,28 @@ class CondaAuthHandler(NamedTuple):
     :param name: Name (e.g., ``basic-auth``). This name should be unique
                  and only one may be registered at a time.
     :param handler: Type that will be used as the authentication handler
-                    during network requests.
+                    during session requests.
     """
 
     name: str
     handler: type[ChannelAuthBase]
+
+
+class CondaTransportAdapter(NamedTuple):
+    """
+    Return type to use when the defining the conda auth handlers hook.
+
+    :param name: Name (e.g., ``localfs``). This name should be unique
+                 and only one may be registered at a time.
+    :param scheme: Scheme (e.g., ``file``). This URI scheme should be
+                   unique and only one may be registered at a time.
+    :param adapter: Type that will be used as the transport adapter
+                    during session requests.
+    """
+
+    name: str
+    scheme: str
+    adapter: type[BaseAdapter]
 
 
 class CondaHealthCheck(NamedTuple):
