@@ -352,17 +352,20 @@ class CondaSpecs:
 
             python = sys.executable
 
+
             def install(prefix, specs, args, env):
                 run([python, "-m", "pip", "install", "--prefix", prefix, *specs])
+
 
             def dry_run(specs, args, env):
                 run([python, "-m", "pip", "install", "--prefix", prefix, *specs, "--dry-run"])
 
+
             @plugins.hookimpl
             def conda_env_installers():
-               yield plugins.CondaEnvInstaller(
-                   name="pip",
-                   install=install,
-                   dry_run=dry_run,
-               )
+                yield plugins.CondaEnvInstaller(
+                    name="pip",
+                    install=install,
+                    dry_run=dry_run,
+                )
         """

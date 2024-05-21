@@ -198,7 +198,9 @@ class CondaPluginManager(pluggy.PluginManager):
     def get_hook_results(self, name: Literal["settings"]) -> list[CondaSetting]: ...
 
     @overload
-    def get_hook_results(self, name: Literal["env_installers"]) -> list[CondaEnvInstaller]: ...
+    def get_hook_results(
+        self, name: Literal["env_installers"]
+    ) -> list[CondaEnvInstaller]: ...
 
     def get_hook_results(self, name):
         """
@@ -408,7 +410,9 @@ class CondaPluginManager(pluggy.PluginManager):
             return found[0]
         if found:
             names = ", ".join([hook.name for hook in found])
-            raise PluginError(f"Too many env installers registered for '{section}': {names}")
+            raise PluginError(
+                f"Too many env installers registered for '{section}': {names}"
+            )
         raise InvalidInstaller(f"Could not find env installer for '{section}'.")
 
 
