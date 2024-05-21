@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from ...env.env import from_yaml
 from ...exceptions import EnvironmentFileNotDownloaded
 from ...models.version import normalized_version
-from . import BaseEnvSpec
+from .base import BaseEnvSpec
 
 if TYPE_CHECKING:
     from types import ModuleType
