@@ -422,7 +422,9 @@ class CondaPluginManager(pluggy.PluginManager):
         for hook in hooks:
             if hook.name == "binstar":
                 return hook
-        raise PluginError(f"Could not find any env spec handlers for resource '{resource}'")
+        raise PluginError(
+            f"Could not find any env spec handlers for resource '{resource}'"
+        )
 
 
 @functools.lru_cache(maxsize=None)  # FUTURE: Python 3.9+, replace w/ functools.cache
