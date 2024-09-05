@@ -234,8 +234,10 @@ def touch_nonadmin(prefix):
             fo.write("")
 
 
-def clone_env(prefix1, prefix2, verbose=True, quiet=False, index_args=None):
+def clone_env(prefix1: str, prefix2: str, verbose=True, quiet=False, index_args=None):
     """Clone existing prefix1 into new prefix2."""
+    prefix1 = str(prefix1)
+    prefix2 = str(prefix2)
     untracked_files = untracked(prefix1)
 
     # Discard conda, conda-env and any package that depends on them
@@ -300,10 +302,7 @@ def clone_env(prefix1, prefix2, verbose=True, quiet=False, index_args=None):
         raise PackagesNotFoundError(notfound)
 
     # Assemble the URL and channel list
-    urls = {}
-    for prec in drecs:
-        urls[prec] = prec["url"]
-
+    urls = {prec: prec["url"] for prec in drecs}
     precs = tuple(PrefixGraph(urls).graph)
     urls = [urls[prec] for prec in precs]
 
@@ -319,9 +318,23 @@ def clone_env(prefix1, prefix2, verbose=True, quiet=False, index_args=None):
     if context.dry_run:
         raise DryRunExit()
 
+    _clone_untracked_files(prefix1, prefix2, untracked_files)
+
+    actions = explicit(
+        urls,
+        prefix2,
+        verbose=not quiet,
+        index=index,
+        force_extract=False,
+        index_args=index_args,
+    )
+    return actions, untracked_files
+
+
+def _clone_untracked_files(source_prefix, target_prefix, untracked_files):
     for f in untracked_files:
-        src = join(prefix1, f)
-        dst = join(prefix2, f)
+        src = join(source_prefix, f)
+        dst = join(target_prefix, f)
         dst_dir = dirname(dst)
         if islink(dst_dir) or isfile(dst_dir):
             rm_rf(dst_dir)
@@ -339,7 +352,7 @@ def clone_env(prefix1, prefix2, verbose=True, quiet=False, index_args=None):
 
         try:
             s = data.decode("utf-8")
-            s = s.replace(prefix1, prefix2)
+            s = s.replace(source_prefix, target_prefix)
             data = s.encode("utf-8")
         except UnicodeDecodeError:  # data is binary
             pass
@@ -347,16 +360,6 @@ def clone_env(prefix1, prefix2, verbose=True, quiet=False, index_args=None):
         with open_utf8(dst, "wb") as fo:
             fo.write(data)
         shutil.copystat(src, dst)
-
-    actions = explicit(
-        urls,
-        prefix2,
-        verbose=not quiet,
-        index=index,
-        force_extract=False,
-        index_args=index_args,
-    )
-    return actions, untracked_files
 
 
 def _get_best_prec_match(precs):

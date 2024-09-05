@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from argparse import _StoreTrueAction
 from logging import getLogger
-from os.path import isdir
 from typing import TYPE_CHECKING
 
 from ..deprecations import deprecated
@@ -98,54 +97,55 @@ def configure_parser(sub_parsers: _SubParsersAction, **kwargs) -> ArgumentParser
 
 @notices
 def execute(args: Namespace, parser: ArgumentParser) -> int:
-    import os
-    from tempfile import mktemp
+    # import os
+    # from tempfile import mktemp
 
-    from ..base.constants import UNUSED_ENV_NAME
-    from ..base.context import context
-    from ..common.path import paths_equal
-    from ..exceptions import ArgumentError, CondaValueError
-    from ..gateways.disk.delete import rm_rf
-    from ..gateways.disk.test import is_conda_environment
-    from .common import confirm_yn
-    from .install import check_prefix, install
+    # from ..base.constants import UNUSED_ENV_NAME
+    # from ..base.context import context
+    # from ..common.path import paths_equal
+    # from ..exceptions import ArgumentError, CondaValueError
+    # from ..gateways.disk.delete import rm_rf
+    # from ..gateways.disk.test import is_conda_environment
+    # from .common import confirm_yn
+    # from .install import check_prefix
+    from .install2 import install
 
-    if not args.name and not args.prefix:
-        if context.dry_run:
-            args.prefix = os.path.join(mktemp(), UNUSED_ENV_NAME)
-            context.__init__(argparse_args=args)
-        else:
-            raise ArgumentError(
-                "one of the arguments -n/--name -p/--prefix is required"
-            )
+    # if not args.name and not args.prefix:
+    #     if context.dry_run:
+    #         args.prefix = os.path.join(mktemp(), UNUSED_ENV_NAME)
+    #         context.__init__(argparse_args=args)
+    #     else:
+    #         raise ArgumentError(
+    #             "one of the arguments -n/--name -p/--prefix is required"
+    #         )
 
-    if is_conda_environment(context.target_prefix):
-        if paths_equal(context.target_prefix, context.root_prefix):
-            raise CondaValueError("The target prefix is the base prefix. Aborting.")
-        if context.dry_run:
-            # Taking the "easy" way out, rather than trying to fake removing
-            # the existing environment before creating a new one.
-            raise CondaValueError(
-                "Cannot `create --dry-run` with an existing conda environment"
-            )
-        confirm_yn(
-            f"WARNING: A conda environment already exists at '{context.target_prefix}'\n\n"
-            "Remove existing environment?\nThis will remove ALL directories contained within "
-            "this specified prefix directory, including any other conda environments.\n\n",
-            default="no",
-            dry_run=False,
-        )
-        log.info("Removing existing environment %s", context.target_prefix)
-        rm_rf(context.target_prefix)
-    elif isdir(context.target_prefix):
-        check_prefix(context.target_prefix)
-
-        confirm_yn(
-            f"WARNING: A directory already exists at the target location '{context.target_prefix}'\n"
-            "but it is not a conda environment.\n"
-            "Continue creating environment",
-            default="no",
-            dry_run=False,
-        )
+    # if is_conda_environment(context.target_prefix):
+    #     if paths_equal(context.target_prefix, context.root_prefix):
+    #         raise CondaValueError("The target prefix is the base prefix. Aborting.")
+    #     if context.dry_run:
+    #         # Taking the "easy" way out, rather than trying to fake removing
+    #         # the existing environment before creating a new one.
+    #         raise CondaValueError(
+    #             "Cannot `create --dry-run` with an existing conda environment"
+    #         )
+    #     confirm_yn(
+    #         f"WARNING: A conda environment already exists at '{context.target_prefix}'\n\n"
+    #         "Remove existing environment?\nThis will remove ALL directories contained within "
+    #         "this specified prefix directory, including any other conda environments.\n\n",
+    #         default="no",
+    #         dry_run=False,
+    #     )
+    #     log.info("Removing existing environment %s", context.target_prefix)
+    #     rm_rf(context.target_prefix)
+    # elif isdir(context.target_prefix):
+    #     check_prefix(context.target_prefix)
+    #
+    #     confirm_yn(
+    #         f"WARNING: A directory already exists at the target location '{context.target_prefix}'\n"
+    #         "but it is not a conda environment.\n"
+    #         "Continue creating environment",
+    #         default="no",
+    #         dry_run=False,
+    #     )
 
     return install(args, parser, "create")

@@ -6,6 +6,8 @@ Core logic for `conda [create|install|update|remove]` commands.
 
 See conda.cli.main_create, conda.cli.main_install, conda.cli.main_update, and
 conda.cli.main_remove for the entry points into this module.
+
+Note that 'remove' only uses `handle_txt()`, but not `install()`.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ import os
 from logging import getLogger
 from os.path import abspath, basename, exists, isdir, isfile, join
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from boltons.setutils import IndexedSet
 
@@ -44,6 +47,7 @@ from ..exceptions import (
     DirectoryNotFoundError,
     DryRunExit,
     EnvironmentLocationNotFound,
+    InvalidInstaller,
     NoBaseEnvironmentError,
     OperationNotAllowed,
     PackageNotInstalledError,
@@ -62,6 +66,10 @@ from ..models.prefix_graph import PrefixGraph
 from . import common
 from .common import check_non_admin
 from .main_config import set_keys
+
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from typing import Iterable
 
 log = getLogger(__name__)
 stderrlog = getLogger("conda.stderr")
@@ -176,6 +184,12 @@ def get_revision(arg, json=False):
 
 def install(args, parser, command="install"):
     """Logic for `conda install`, `conda update`, and `conda create`."""
+    from ..env.env import print_result
+    from ..env.installers.base import get_installer
+    from ..env.specs import detect as detect_input_file
+    from ..env.specs.requirements import RequirementsSpec
+    from ..env.specs.yaml_file import YamlFileSpec
+
     context.validate_configuration()
     check_non_admin()
     # this is sort of a hack.  current_repodata.json may not have any .tar.bz2 files,
@@ -293,15 +307,74 @@ def install(args, parser, command="install"):
 
     specs = []
     if args.file:
-        for fpath in args.file:
-            try:
-                specs.extend(common.specs_from_url(fpath, json=context.json))
-            except UnicodeError:
-                raise CondaError(
-                    "Error reading file, file should be a text file containing"
-                    " packages \nconda create --help for details"
+        is_explicit = False
+        for idx, fpath in enumerate(args.file):
+            parsed = detect_input_file(name=Path(prefix).name, filename=fpath)
+            if isinstance(parsed, YamlFileSpec):
+                if idx != 0:
+                    # We only allow a single --file to be a YAML file (for now)
+                    raise CondaError(
+                        "YAML files can only be passed as the single --file argument."
+                    )
+                log.warning(
+                    "YAML support in 'conda {create,install,update,remove} --file' is experimental'"
                 )
-        if "@EXPLICIT" in specs:
+                env = parsed.environment
+                result = {"conda": None, "pip": None}
+                if len(env.dependencies) == 0:
+                    installer_type = "conda"
+                    pkg_specs = []
+                    installer = get_installer(installer_type)
+                    if context.dry_run:
+                        result[installer_type] = installer.dry_run(pkg_specs, args, env)
+                    else:
+                        result[installer_type] = installer.install(
+                            prefix, pkg_specs, args, env
+                        )
+                else:
+                    for installer_type, pkg_specs in env.dependencies.items():
+                        try:
+                            installer = get_installer(installer_type)
+                            if context.dry_run:
+                                result[installer_type] = installer.dry_run(
+                                    pkg_specs, args, env
+                                )
+                            else:
+                                result[installer_type] = installer.install(
+                                    prefix, pkg_specs, args, env
+                                )
+                        except InvalidInstaller:
+                            raise CondaError(
+                                dals(
+                                    f"""
+                                    Unable to install package for {installer_type}.
+
+                                    Please double check and ensure your dependencies file has
+                                    the correct spelling. You might also try installing the
+                                    conda-env-{installer_type} package to see if provides
+                                    the required installer.
+                                    """
+                                )
+                            )
+
+                if env.variables:
+                    pd = PrefixData(prefix)
+                    pd.set_environment_env_vars(env.variables)
+
+                touch_nonadmin(prefix)
+                print_result(args, prefix, result)
+                return
+            elif isinstance(parsed, RequirementsSpec):
+                try:
+                    new_specs = common.specs_from_url(fpath, json=context.json)
+                    specs.extend(new_specs)
+                    is_explicit = "@EXPLICIT" in new_specs
+                except UnicodeError:
+                    raise CondaError(
+                        "Error reading file, file should be a text file containing"
+                        " packages \nconda create --help for details"
+                    )
+        if is_explicit:
             explicit(specs, prefix, verbose=not context.quiet, index_args=index_args)
             if newenv:
                 touch_nonadmin(prefix)
@@ -492,7 +565,8 @@ def install(args, parser, command="install"):
     handle_txn(unlink_link_transaction, prefix, args, newenv)
 
 
-def revert_actions(prefix, revision=-1, index=None):
+def revert_actions(prefix, revision=-1, index=None) -> UnlinkLinkTransaction:
+    index = index or {}
     # TODO: If revision raise a revision error, should always go back to a safe revision
     h = History(prefix)
     # TODO: need a History method to get user-requested specs for revision number
@@ -530,7 +604,14 @@ def revert_actions(prefix, revision=-1, index=None):
     return UnlinkLinkTransaction(setup)
 
 
-def handle_txn(unlink_link_transaction, prefix, args, newenv, remove_op=False):
+def handle_txn(
+    unlink_link_transaction: UnlinkLinkTransaction,
+    prefix: str,
+    args: Namespace,
+    newenv: bool,
+    remove_op: bool = False,
+    post_transaction_callables: Iterable[callable] = (),
+):
     if unlink_link_transaction.nothing_to_do:
         if remove_op:
             # No packages found to remove from environment
@@ -564,6 +645,9 @@ def handle_txn(unlink_link_transaction, prefix, args, newenv, remove_op=False):
 
     except SystemExit as e:
         raise CondaSystemExit("Exiting", e)
+
+    for func in post_transaction_callables:
+        func()
 
     if newenv:
         touch_nonadmin(prefix)
