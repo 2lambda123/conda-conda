@@ -160,6 +160,7 @@ jobs:
             .coverage
             durations\${{ runner.os }}.json
             test-report.xml
+            test-report.html
           retention-days: 1  # temporary, combined in aggregate below
 
   # linux test suite
@@ -264,6 +265,7 @@ jobs:
             .coverage
             durations/${{ runner.os }}.json
             test-report.xml
+            test-report.html
           retention-days: 1  # temporary, combined in aggregate below
 
   # linux benchmarks
@@ -508,6 +510,7 @@ jobs:
             .coverage
             durations/${{ runner.os }}.json
             test-report.xml
+            test-report.html
           retention-days: 1  # temporary, combined in aggregate below
 
   # aggregate and upload
