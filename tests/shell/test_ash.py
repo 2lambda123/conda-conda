@@ -1,5 +1,7 @@
 # Copyright (C) 2012 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 from shutil import which
 
 import pytest
@@ -12,5 +14,13 @@ pytestmark = [
 ]
 
 
-def test_ash_available():
-    assert which("ash")
+@pytest.fixture(scope="module")
+def ash() -> str:
+    if which("ash"):
+        return "ash"
+
+    raise FileNotFoundError("ash not found")
+
+
+def test_ash_available(ash: str) -> None:
+    assert ash

@@ -1,5 +1,7 @@
 # Copyright (C) 2012 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
 from shutil import which
 
 import pytest
@@ -12,5 +14,13 @@ pytestmark = [
 ]
 
 
-def test_cmd_exe_available():
-    assert which("cmd.exe")
+@pytest.fixture(scope="module")
+def cmd_exe() -> str:
+    if which("cmd.exe"):
+        return "cmd.exe"
+
+    raise FileNotFoundError("cmd.exe not found")
+
+
+def test_cmd_exe_available(cmd_exe: str) -> None:
+    assert cmd_exe
