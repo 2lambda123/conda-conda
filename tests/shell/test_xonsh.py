@@ -7,10 +7,10 @@ import pytest
 from . import SKIPIF_ON_WIN
 
 pytestmark = SKIPIF_ON_WIN
-parametrize_xonsh = pytest.mark.parametrize("shell", ["xonsh"], indirect=True)
+PARAMETRIZE_XONSH = pytest.mark.parametrize("shell", ["xonsh"], indirect=True)
 
 
-@parametrize_xonsh
+@PARAMETRIZE_XONSH
 def test_shell_available(shell: str) -> None:
     # the fixture does all the work
     pass
