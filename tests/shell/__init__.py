@@ -63,6 +63,7 @@ class InteractiveShellType(type):
             "args": ("-l",) if on_win else (),
             "base_shell": "posix",  # inheritance implemented in __init__
         },
+        "ash": {"base_shell": "posix"},
         "dash": {"base_shell": "posix"},
         "zsh": {"base_shell": "posix"},
         # It should be noted here that we use the latest hook with whatever conda.exe is installed
