@@ -13,6 +13,7 @@ from conda import __version__ as CONDA_VERSION
 from . import DEV_ARG, HDF5_VERSION, SKIPIF_ON_WIN, InteractiveShell
 
 log = getLogger(__name__)
+pytestmark = pytest.mark.integration
 PARAMETRIZE_POWERSHELL = pytest.mark.parametrize(
     "shell",
     [("powershell", "pwsh", "pwsh-preview")],

@@ -6,7 +6,7 @@ import pytest
 
 from . import SKIPIF_ON_WIN, InteractiveShell
 
-pytestmark = SKIPIF_ON_WIN
+pytestmark = [pytest.mark.integration, SKIPIF_ON_WIN]
 PARAMETRIZE_FISH = pytest.mark.parametrize("shell", ["fish"], indirect=True)
 
 

@@ -8,7 +8,7 @@ from conda import __version__ as CONDA_VERSION
 
 from . import SKIPIF_ON_WIN, InteractiveShell
 
-pytestmark = SKIPIF_ON_WIN
+pytestmark = [pytest.mark.integration, SKIPIF_ON_WIN]
 PARAMETRIZE_CSH = pytest.mark.parametrize("shell", ["csh", "tcsh"], indirect=True)
 
 

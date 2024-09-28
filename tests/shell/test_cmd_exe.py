@@ -25,7 +25,7 @@ from . import (
 )
 
 log = getLogger(__name__)
-pytestmark = [SKIPIF_ON_LINUX, SKIPIF_ON_MAC]
+pytestmark = [pytest.mark.integration, SKIPIF_ON_LINUX, SKIPIF_ON_MAC]
 PARAMETRIZE_CMD_EXE = pytest.mark.parametrize("shell", ["cmd.exe"], indirect=True)
 
 

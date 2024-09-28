@@ -17,8 +17,6 @@ if TYPE_CHECKING:
 
     from conda.testing.fixtures import PathFactoryFixture
 
-pytestmark = pytest.mark.integration
-
 
 @pytest.fixture(scope="module")
 def shell(request: FixtureRequest) -> str:

@@ -24,6 +24,7 @@ from . import (
 )
 
 log = getLogger(__name__)
+pytestmark = pytest.mark.integration
 PARAMETRIZE_POSIX = pytest.mark.parametrize(
     "shell",
     [
