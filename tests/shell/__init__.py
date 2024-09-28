@@ -261,3 +261,9 @@ class InteractiveShell(metaclass=InteractiveShellType):
 
     def path_conversion(self, *args, **kwargs):
         return self.activator.path_conversion(*args, **kwargs)
+
+    @property
+    def is_a_function(self) -> str:
+        if self.shell_name in ("dash", "zsh"):
+            return "conda is a shell function"
+        return "conda is a function"

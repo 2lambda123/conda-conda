@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from logging import getLogger
+from pathlib import Path
 
 import pytest
 
@@ -50,11 +51,6 @@ def test_basic_integration(
     prefix, prefix2, prefix3 = shell_wrapper_integration
 
     with InteractiveShell(shell) as interactive:
-        if interactive.shell_name in ("zsh", "dash"):
-            conda_is_a_function = "conda is a shell function"
-        else:
-            conda_is_a_function = "conda is a function"
-
         case = str.lower if on_win else str
 
         num_paths_added = len(tuple(interactive.activator._get_path_dirs(prefix)))
@@ -75,7 +71,7 @@ def test_basic_integration(
             interactive.sendline(f'export PATH="{PATH0}"')
             PATH0 = interactive.get_env_var("PATH", "")
         interactive.sendline("type conda")
-        interactive.expect(conda_is_a_function)
+        interactive.expect(interactive.is_a_function)
 
         _CE_M = interactive.get_env_var("_CE_M")
         _CE_CONDA = interactive.get_env_var("_CE_CONDA")
@@ -86,7 +82,7 @@ def test_basic_integration(
         interactive.sendline(f"conda {ACTIVATE_ARGS} base")
 
         interactive.sendline("type conda")
-        interactive.expect(conda_is_a_function)
+        interactive.expect(interactive.is_a_function)
 
         CONDA_EXE2 = case(interactive.get_env_var("CONDA_EXE"))
         _CE_M2 = interactive.get_env_var("_CE_M")
@@ -104,7 +100,7 @@ def test_basic_integration(
         interactive.sendline(f'conda {ACTIVATE_ARGS} "{prefix_p}"')
 
         interactive.sendline("type conda")
-        interactive.expect(conda_is_a_function)
+        interactive.expect(interactive.is_a_function)
 
         CONDA_EXE2 = case(interactive.get_env_var("CONDA_EXE"))
         _CE_M2 = interactive.get_env_var("_CE_M")
@@ -160,7 +156,7 @@ def test_basic_integration(
         # TODO: assert that reactivate worked correctly
 
         interactive.sendline("type conda")
-        interactive.expect(conda_is_a_function)
+        interactive.expect(interactive.is_a_function)
 
         interactive.sendline(f"conda run {DEV_ARG} h5stat --version")
         interactive.expect(rf".*h5stat: Version {HDF5_VERSION}.*")
@@ -286,32 +282,36 @@ def test_legacy_activate_deactivate_bash(
     prefix, prefix2, prefix3 = shell_wrapper_integration
 
     with InteractiveShell(shell) as interactive:
-        CONDA_PACKAGE_ROOT_p = interactive.path_conversion(CONDA_PACKAGE_ROOT)
+        CONDA_ROOT = Path(CONDA_PACKAGE_ROOT)
+        activate = interactive.path_conversion(
+            CONDA_ROOT / "shell" / "bin" / "activate"
+        )
+        deactivate = interactive.path_conversion(
+            CONDA_ROOT / "shell" / "bin" / "deactivate"
+        )
+
         prefix2_p = interactive.path_conversion(prefix2)
         prefix3_p = interactive.path_conversion(prefix3)
-        interactive.sendline(f"export _CONDA_ROOT='{CONDA_PACKAGE_ROOT_p}/shell'")
-        interactive.sendline(
-            f'source "${{_CONDA_ROOT}}/bin/activate" {DEV_ARG} "{prefix2_p}"'
-        )
+
+        interactive.sendline(f"export _CONDA_ROOT='{CONDA_ROOT}/shell'")
+        interactive.sendline(f'. "{activate}" {DEV_ARG} "{prefix2_p}"')
         PATH0 = interactive.get_env_var("PATH")
         assert "charizard" in PATH0
 
         interactive.sendline("type conda")
-        interactive.expect("conda is a function")
+        interactive.expect(interactive.is_a_function)
 
         interactive.sendline("conda --version")
         interactive.expect_exact(f"conda {CONDA_VERSION}")
 
-        interactive.sendline(
-            f'source "${{_CONDA_ROOT}}/bin/activate" {DEV_ARG} "{prefix3_p}"'
-        )
+        interactive.sendline(f'. "{activate}" {DEV_ARG} "{prefix3_p}"')
 
         PATH1 = interactive.get_env_var("PATH")
         assert "venusaur" in PATH1
 
-        interactive.sendline('source "${_CONDA_ROOT}/bin/deactivate"')
+        interactive.sendline(f'. "{deactivate}"')
         PATH2 = interactive.get_env_var("PATH")
         assert "charizard" in PATH2
 
-        interactive.sendline('source "${_CONDA_ROOT}/bin/deactivate"')
+        interactive.sendline(f'. "{deactivate}"')
         interactive.assert_env_var("CONDA_SHLVL", "0")
