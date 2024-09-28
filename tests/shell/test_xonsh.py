@@ -2,22 +2,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-from shutil import which
-
 import pytest
 
-from conda.common.compat import on_win
+from . import not_win
 
-pytestmark = pytest.mark.skipif(on_win, reason="xonsh is harder to install on Windows")
-
-
-@pytest.fixture(scope="module")
-def xonsh() -> str:
-    if which("xonsh"):
-        return "xonsh"
-
-    raise FileNotFoundError("xonsh not found")
+pytestmark = not_win
 
 
-def test_xonsh_available(xonsh: str) -> None:
-    assert xonsh
+@pytest.parameterize("shell", ["xonsh"], indirect=True)
+def test_shell_available(shell: str) -> None:
+    # the fixture does all the work
+    pass
