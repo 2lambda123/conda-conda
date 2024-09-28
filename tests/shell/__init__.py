@@ -6,6 +6,6 @@ import pytest
 
 from conda.common.compat import on_linux, on_mac, on_win
 
-not_linux = pytest.mark.skipif(on_linux, reason="not available on Linux")
-not_mac = pytest.mark.skipif(on_mac, reason="not available on macOS")
-not_win = pytest.mark.skipif(on_win, reason="not available on Windows")
+skipif_not_linux = pytest.mark.skipif(on_linux, reason="not available on Linux")
+skipif_not_mac = pytest.mark.skipif(on_mac, reason="not available on macOS")
+skipif_not_win = pytest.mark.skipif(on_win, reason="not available on Windows")

@@ -4,19 +4,21 @@ from __future__ import annotations
 
 import pytest
 
-from . import not_mac, not_win
+from . import skipif_not_mac, skipif_not_win
 
-
-@pytest.parameterize(
+parametrize_posix = pytest.mark.parametrize(
     "shell",
     [
-        pytest.param("ash", mark=[not_mac, not_win]),
+        pytest.param("ash", marks=[skipif_not_mac, skipif_not_win]),
         "bash",
-        pytest.param("dash", mark=not_win),
-        pytest.param("zsh", mark=not_win),
+        pytest.param("dash", marks=skipif_not_win),
+        pytest.param("zsh", marks=skipif_not_win),
     ],
     indirect=True,
 )
+
+
+@parametrize_posix
 def test_shell_available(shell: str) -> None:
     # the fixture does all the work
     pass

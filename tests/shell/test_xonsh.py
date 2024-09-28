@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from . import not_win
+from . import skipif_not_win
 
-pytestmark = not_win
+pytestmark = skipif_not_win
+parametrize_xonsh = pytest.mark.parametrize("shell", ["xonsh"], indirect=True)
 
 
-@pytest.parameterize("shell", ["xonsh"], indirect=True)
+@parametrize_xonsh
 def test_shell_available(shell: str) -> None:
     # the fixture does all the work
     pass
