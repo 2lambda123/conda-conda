@@ -14,9 +14,7 @@ from conda.base.context import context
 from conda.common.compat import on_win
 from conda.testing.integration import SPACER_CHARACTER
 
-from . import InteractiveShell
-from .test_cmd_exe import PARAMETRIZE_CMD_EXE
-from .test_posix import PARAMETRIZE_POSIX
+from . import SKIPIF_ON_LINUX, SKIPIF_ON_MAC, SKIPIF_ON_WIN, InteractiveShell
 
 if TYPE_CHECKING:
     from typing import Any, Iterator
@@ -47,7 +45,15 @@ def prefix(tmp_path_factory: TempPathFactory) -> Iterator[Path]:
 
 @pytest.mark.parametrize(
     "shell",
-    [*PARAMETRIZE_CMD_EXE.args[-1], *PARAMETRIZE_POSIX.args[-1]],
+    [
+        # cmd.exe
+        pytest.param("cmd.exe", marks=[SKIPIF_ON_LINUX, SKIPIF_ON_MAC]),
+        # posix
+        pytest.param("ash", marks=[SKIPIF_ON_MAC, SKIPIF_ON_WIN]),
+        "bash",
+        pytest.param("dash", marks=SKIPIF_ON_WIN),
+        pytest.param("zsh", marks=SKIPIF_ON_WIN),
+    ],
     indirect=True,
 )
 def test_activate_deactivate_modify_path(
