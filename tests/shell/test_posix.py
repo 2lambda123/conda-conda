@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from . import skipif_not_mac, skipif_not_win
+from . import SKIPIF_ON_MAC, SKIPIF_ON_WIN
 
 parametrize_posix = pytest.mark.parametrize(
     "shell",
     [
-        pytest.param("ash", marks=[skipif_not_mac, skipif_not_win]),
+        pytest.param("ash", marks=[SKIPIF_ON_MAC, SKIPIF_ON_WIN]),
         "bash",
-        pytest.param("dash", marks=skipif_not_win),
-        pytest.param("zsh", marks=skipif_not_win),
+        pytest.param("dash", marks=SKIPIF_ON_WIN),
+        pytest.param("zsh", marks=SKIPIF_ON_WIN),
     ],
     indirect=True,
 )

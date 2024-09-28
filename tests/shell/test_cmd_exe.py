@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from . import skipif_not_linux, skipif_not_mac
+from . import SKIPIF_ON_LINUX, SKIPIF_ON_MAC
 
-pytestmark = [skipif_not_linux, skipif_not_mac]
+pytestmark = [SKIPIF_ON_LINUX, SKIPIF_ON_MAC]
 parametrize_cmd_exe = pytest.mark.parametrize("shell", ["cmd.exe"], indirect=True)
 
 

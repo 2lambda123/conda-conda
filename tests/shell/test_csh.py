@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from . import skipif_not_win
+from . import SKIPIF_ON_WIN
 
-pytestmark = skipif_not_win
+pytestmark = SKIPIF_ON_WIN
 parametrize_csh = pytest.mark.parametrize("shell", ["csh", "tcsh"], indirect=True)
 
 
