@@ -45,8 +45,11 @@ def prefix(tmp_path_factory: TempPathFactory) -> Iterator[Path]:
     yield prefix
 
 
-@PARAMETRIZE_POSIX
-@PARAMETRIZE_CMD_EXE
+@pytest.mark.parametrize(
+    "shell",
+    [*PARAMETRIZE_CMD_EXE.args[-1], *PARAMETRIZE_POSIX.args[-1]],
+    indirect=True,
+)
 def test_activate_deactivate_modify_path(
     test_recipes_channel: Path,
     shell,
