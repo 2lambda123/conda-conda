@@ -5,11 +5,21 @@ from __future__ import annotations
 import pytest
 
 from conda import __version__ as CONDA_VERSION
+from conda.common.compat import on_linux
 
 from . import SKIPIF_ON_WIN, InteractiveShell
 
 pytestmark = [pytest.mark.integration, SKIPIF_ON_WIN]
-PARAMETRIZE_CSH = pytest.mark.parametrize("shell", ["csh", "tcsh"], indirect=True)
+PARAMETRIZE_CSH = pytest.mark.parametrize(
+    "shell",
+    [
+        # csh is often symlinked to tcsh but on some platforms it is the original csh
+        # we cannot use the original csh since aliases do no support parameter passing
+        pytest.param("csh", marks=pytest.mark.skipif(on_linux, reason="not supported")),
+        "tcsh",
+    ],
+    indirect=True,
+)
 
 
 @PARAMETRIZE_CSH
