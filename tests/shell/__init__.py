@@ -265,6 +265,6 @@ class InteractiveShell(metaclass=InteractiveShellType):
 
     @property
     def is_a_function(self) -> str:
-        if self.shell_name in ("dash", "zsh"):
+        if self.shell_name in ("ash", "dash", "zsh"):
             return "conda is a shell function"
         return "conda is a function"
