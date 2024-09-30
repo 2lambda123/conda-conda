@@ -6,7 +6,11 @@ import pytest
 
 from . import SKIPIF_ON_WIN
 
-pytestmark = [pytest.mark.integration, SKIPIF_ON_WIN]
+pytestmark = [
+    pytest.mark.integration,
+    # skip on Windows since it's harder to install correctly
+    SKIPIF_ON_WIN,
+]
 PARAMETRIZE_XONSH = pytest.mark.parametrize("shell", ["xonsh"], indirect=True)
 
 
