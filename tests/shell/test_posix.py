@@ -287,7 +287,16 @@ def test_bash_activate_error(
         interactive.expect("usage: conda activate")
 
 
-@PARAMETRIZE_POSIX
+@pytest.mark.parametrize(
+    "shell",
+    [
+        pytest.param("ash", marks=pytest.mark.skip("sourcing ignores arguments")),
+        "bash",
+        pytest.param("dash", marks=pytest.mark.skip("sourcing ignores arguments")),
+        pytest.param("zsh", marks=SKIPIF_ON_WIN),
+    ],
+    indirect=True,
+)
 def test_legacy_activate_deactivate_bash(
     shell_wrapper_integration: tuple[str, str, str], shell: str
 ) -> None:
