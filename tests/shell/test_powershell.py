@@ -16,7 +16,7 @@ log = getLogger(__name__)
 pytestmark = pytest.mark.integration
 PARAMETRIZE_POWERSHELL = pytest.mark.parametrize(
     "shell",
-    [("powershell", "pwsh", "pwsh-preview")],
+    [pytest.param(("powershell", "pwsh", "pwsh-preview"), id="powershell")],
     indirect=True,
 )
 
