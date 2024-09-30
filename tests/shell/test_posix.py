@@ -53,10 +53,14 @@ def test_basic_integration(
     with InteractiveShell(shell) as interactive:
         case = str.lower if on_win else str
 
-        num_paths_added = len(tuple(interactive.activator._get_path_dirs(prefix)))
         prefix_p = interactive.path_conversion(prefix)
         prefix2_p = interactive.path_conversion(prefix2)
         interactive.path_conversion(prefix3)
+
+        base_paths = len(tuple(interactive.activator._get_path_dirs(sys.prefix)))
+        prefix_paths = len(tuple(interactive.activator._get_path_dirs(prefix)))
+        prefix2_paths = len(tuple(interactive.activator._get_path_dirs(prefix2)))
+        prefix3_paths = len(tuple(interactive.activator._get_path_dirs(prefix3)))
 
         PATH0 = interactive.get_env_var("PATH", "")
         assert any(path.endswith("condabin") for path in PATH0.split(":"))
@@ -90,7 +94,7 @@ def test_basic_integration(
         interactive.assert_env_var("PS1", "(base).*")
         interactive.assert_env_var("CONDA_SHLVL", "1")
         PATH1 = interactive.get_env_var("PATH", "")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH1.split(":"))
+        assert len(PATH0.split(":")) + base_paths == len(PATH1.split(":"))
 
         CONDA_EXE = case(interactive.get_env_var("CONDA_EXE"))
         _CE_M = interactive.get_env_var("_CE_M")
@@ -121,7 +125,7 @@ def test_basic_integration(
         # Also, self.prefix instead of prefix_p is deliberate (maybe unfortunate?)
         assert CONDA_PREFIX.lower() == prefix.lower()
         PATH2 = interactive.get_env_var("PATH", "")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH2.split(":"))
+        assert len(PATH0.split(":")) + prefix_paths == len(PATH2.split(":"))
 
         interactive.sendline("env | sort | grep CONDA")
         interactive.expect("CONDA_")
@@ -135,7 +139,7 @@ def test_basic_integration(
         interactive.assert_env_var("PS1", "(charizard).*")
         interactive.assert_env_var("CONDA_SHLVL", "3")
         PATH3 = interactive.get_env_var("PATH")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH3.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths == len(PATH3.split(":"))
 
         CONDA_EXE2 = case(interactive.get_env_var("CONDA_EXE"))
         _CE_M2 = interactive.get_env_var("_CE_M")
@@ -170,12 +174,12 @@ def test_basic_integration(
         interactive.sendline(f"conda {DEACTIVATE_ARGS}")
         interactive.assert_env_var("CONDA_SHLVL", "2")
         PATH = interactive.get_env_var("PATH")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH.split(":"))
+        assert len(PATH0.split(":")) + prefix_paths == len(PATH.split(":"))
 
         interactive.sendline(f"conda {DEACTIVATE_ARGS}")
         interactive.assert_env_var("CONDA_SHLVL", "1")
         PATH = interactive.get_env_var("PATH")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH.split(":"))
+        assert len(PATH0.split(":")) + base_paths == len(PATH.split(":"))
 
         interactive.sendline(f"conda {DEACTIVATE_ARGS}")
         interactive.assert_env_var("CONDA_SHLVL", "0")
@@ -204,21 +208,25 @@ def test_basic_integration(
         interactive.sendline(f'conda {ACTIVATE_ARGS} "{prefix2_p}"')
         interactive.assert_env_var("CONDA_SHLVL", "1")
         PATH1 = interactive.get_env_var("PATH")
-        assert len(PATH0.split(":")) + num_paths_added == len(PATH1.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths == len(PATH1.split(":"))
 
         interactive.sendline(f'conda {ACTIVATE_ARGS} "{prefix3}" --stack')
         interactive.assert_env_var("CONDA_SHLVL", "2")
         PATH2 = interactive.get_env_var("PATH")
         assert "charizard" in PATH2
         assert "venusaur" in PATH2
-        assert len(PATH0.split(":")) + num_paths_added * 2 == len(PATH2.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths + prefix3_paths == len(
+            PATH2.split(":")
+        )
 
         interactive.sendline(f'conda {ACTIVATE_ARGS} "{prefix_p}"')
         interactive.assert_env_var("CONDA_SHLVL", "3")
         PATH3 = interactive.get_env_var("PATH")
         assert "charizard" in PATH3
         assert "venusaur" not in PATH3
-        assert len(PATH0.split(":")) + num_paths_added * 2 == len(PATH3.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths + prefix_paths == len(
+            PATH3.split(":")
+        )
 
         interactive.sendline(f"conda {DEACTIVATE_ARGS}")
         interactive.assert_env_var("CONDA_SHLVL", "2")
@@ -244,14 +252,18 @@ def test_basic_integration(
         PATH2 = interactive.get_env_var("PATH")
         assert "charizard" in PATH2
         assert "venusaur" in PATH2
-        assert len(PATH0.split(":")) + num_paths_added * 2 == len(PATH2.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths + prefix3_paths == len(
+            PATH2.split(":")
+        )
 
         interactive.sendline(f'conda {ACTIVATE_ARGS} "{prefix_p}"')
         interactive.assert_env_var("CONDA_SHLVL", "3")
         PATH3 = interactive.get_env_var("PATH")
         assert "charizard" in PATH3
         assert "venusaur" not in PATH3
-        assert len(PATH0.split(":")) + num_paths_added * 2 == len(PATH3.split(":"))
+        assert len(PATH0.split(":")) + prefix2_paths + prefix_paths == len(
+            PATH3.split(":")
+        )
 
 
 @PARAMETRIZE_POSIX
