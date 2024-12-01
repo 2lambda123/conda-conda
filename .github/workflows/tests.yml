@@ -107,7 +107,7 @@ jobs:
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
           condarc-file: .github\condarc-${{ matrix.default-channel }}
           run-post: false  # skip post cleanup
@@ -146,7 +146,7 @@ jobs:
           -m "${{ env.PYTEST_MARKER }}"
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
           flags: ${{ runner.os }},${{ runner.arch }},${{ matrix.python-version }},${{ matrix.test-type }}
           token: ${{ secrets.CODECOV_TOKEN }}  # required
@@ -214,7 +214,7 @@ jobs:
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
           condarc-file: .github/condarc-${{ matrix.default-channel }}
           run-post: false  # skip post cleanup
@@ -250,7 +250,7 @@ jobs:
           -m "${{ env.PYTEST_MARKER }}"
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
           flags: ${{ runner.os }},${{ runner.arch }},${{ matrix.python-version }},${{ matrix.test-type }}
           token: ${{ secrets.CODECOV_TOKEN }}  # required
@@ -300,7 +300,7 @@ jobs:
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
           condarc-file: .github/condarc-defaults
           run-post: false  # skip post cleanup
@@ -330,7 +330,7 @@ jobs:
         run: conda list --show-channel-urls
 
       - name: Run Benchmarks
-        uses: CodSpeedHQ/action@b587655f756aab640e742fec141261bc6f0a569d # v3.0.1
+        uses: CodSpeedHQ/action@513a19673a831f139e8717bf45ead67e47f00044 # v3.2.0
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: $CONDA/envs/test/bin/pytest --codspeed
@@ -430,7 +430,7 @@ jobs:
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
           condarc-file: .github/condarc-defaults
           run-post: false  # skip post cleanup
@@ -517,7 +517,7 @@ jobs:
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
           condarc-file: .github/condarc-${{ matrix.default-channel }}
           run-post: false  # skip post cleanup
@@ -556,7 +556,7 @@ jobs:
           -m "${{ env.PYTEST_MARKER }}"
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
           flags: ${{ runner.os }},${{ runner.arch }},${{ matrix.python-version }},${{ matrix.test-type }}
           token: ${{ secrets.CODECOV_TOKEN }}  # required
@@ -697,7 +697,7 @@ jobs:
           Path(environ["GITHUB_ENV"]).write_text(f"ANACONDA_ORG_LABEL={label}")
 
       - name: Create & Upload
-        uses: conda/actions/canary-release@15f883f14f4232f83658e3609c3316d58905138f # v24.8.0
+        uses: conda/actions/canary-release@6e72e0db87e72f0020e493aeb02f864363bd9258 # v24.11.1
         env:
           # Run conda-build in isolated activation to properly package conda
           _CONDA_BUILD_ISOLATED_ACTIVATION: 1
