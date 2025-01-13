@@ -382,9 +382,9 @@ def massage_arguments(arguments, errors="assert"):
     if not isiterable(arguments):
         arguments = (arguments,)
 
-    assert not any(
-        [isiterable(arg) for arg in arguments]
-    ), "Individual arguments must not be iterable"  # NOQA
+    assert not any([isiterable(arg) for arg in arguments]), (
+        "Individual arguments must not be iterable"
+    )  # NOQA
     arguments = list(arguments)
 
     return arguments
